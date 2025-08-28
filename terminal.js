@@ -51,8 +51,7 @@ function execCommand(raw) {
       println(HELP_TEXT);
       break;
     case 'about':
-      println(`I'm a recent Cyber‑Security graduate passionate about secure coding,`);
-      println(`red‑team tactics, and privacy‑first web design.`);
+      println(`\nI'm a recent Cyber‑Security graduate passionate about secure coding, red‑team tactics, and privacy‑first web design.`);
       break;
     case 'projects':
       PROJECTS.forEach(p => {

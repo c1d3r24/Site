@@ -91,24 +91,51 @@ term.prompt = () => {
   term.write('\r\n> ');
 };
 
-term.onData(e => {
-  const printable = e.charCodeAt(0) >= 32 && e.charCodeAt(0) !== 127;
 
-  if (e === '\r') {                // Enter
+const commandHistory = [];
+let historyIndex = -1;
+
+term.onKey(({ key, domEvent }) => {
+  const printable = !domEvent.ctrlKey && !domEvent.altKey && !domEvent.metaKey && domEvent.key.length === 1;
+
+  if (domEvent.key === 'Enter') {
     execCommand(commandBuffer);
+    if (commandBuffer.trim() !== '') {
+      commandHistory.push(commandBuffer);
+    }
+    historyIndex = commandHistory.length;
     commandBuffer = '';
     term.prompt();
-  } else if (e === '\u007F') {    // Backspace (DEL)
-    // Do not delete beyond the prompt
+  } else if (domEvent.key === 'Backspace') {
     if (commandBuffer.length > 0) {
       commandBuffer = commandBuffer.slice(0, -1);
-      term.write('\b \b'); // erase char on screen
+      term.write('\b \b');
+    }
+  } else if (domEvent.key === 'ArrowUp') {
+    if (historyIndex > 0) {
+      term.write('\x1b[2K\r> ');
+      historyIndex--;
+      commandBuffer = commandHistory[historyIndex];
+      term.write(commandBuffer);
+    }
+  } else if (domEvent.key === 'ArrowDown') {
+    if (historyIndex < commandHistory.length - 1) {
+      term.write('\x1b[2K\r> ');
+      historyIndex++;
+      commandBuffer = commandHistory[historyIndex];
+      term.write(commandBuffer);
+    } else {
+      term.write('\x1b[2K\r> ');
+      historyIndex = commandHistory.length;
+      commandBuffer = '';
     }
   } else if (printable) {
-    commandBuffer += e;
-    term.write(e);
+    commandBuffer += key;
+    term.write(key);
   }
 });
+
+
 
 // ==== STARTUP MESSAGE ======================================================
 term.writeln('Welcome to myConsole – a terminal‑styled portfolio.');

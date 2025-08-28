@@ -1,0 +1,29 @@
+/* Full‑screen dark console */
+html, body {
+  height: 100%;
+  margin: 0;
+  background: #000;
+  color: #fff;
+  font-family: 'Fira Code', monospace;
+}
+
+/* Container that holds the xterm canvas */
+#terminal-container {
+  height: 100%;
+  width: 100%;
+}
+
+/* Optional: hide scrollbars that xterm may add */
+.xterm-viewport::-webkit-scrollbar {
+  display: none;
+}
+
+/* Cursor style – block, blinking */
+.xterm-cursor {
+  background-color: #0f0 !important;
+  animation: blink 1s step-end infinite;
+}
+@keyframes blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}

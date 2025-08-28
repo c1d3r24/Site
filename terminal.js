@@ -18,8 +18,7 @@ fitAddon.fit();               // size to container
 window.addEventListener('resize', () => fitAddon.fit());
 
 // ==== COMMAND DEFINITIONS ===================================================
-const HELP_TEXT = `
-Available commands:
+const HELP_TEXT = `Available commands:
   help            Show this help
   about           Who I am
   projects        List my open‑source projects
@@ -38,7 +37,10 @@ const PROJECTS = [
 
 // Simple helper to print a line with a trailing newline
 function println(text = '') {
-  term.writeln(text);
+  term.write('\r\n');
+  text.split('\n').forEach(line => {
+    term.write(line + '\r\n');
+  });
 }
 
 // Command dispatcher
@@ -51,13 +53,13 @@ function execCommand(raw) {
       println(HELP_TEXT);
       break;
     case 'about':
-      println(`\nI'm a recent Cyber‑Security graduate passionate about secure coding, red‑team tactics, and privacy‑first web design.`);
+      println(`\x1b[93mI'm a recent Cyber‑Security graduate passionate about secure coding, red‑team tactics, and privacy‑first web design.`);
       break;
     case 'projects':
       PROJECTS.forEach(p => {
-        println(`\n\n\x1b[96m${p.name}\x1b[0m – ${p.desc}`);
+        println(`\x1b[96m${p.name}\x1b[0m – ${p.desc}`);
         if (p.url) {
-		println(`\x1b[92m${p.url}\x1b[0m`);
+		term.write(`\x1b[92m${p.url}\x1b[0m`);
 	} else {
 		println(`\x1b[30;43m  coming soon  \x1b[0m`);
 	}

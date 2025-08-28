@@ -30,19 +30,9 @@ Available commands:
 
 const PROJECTS = [
   {
-    name: "SecureLogin",
-    desc: "Password‑less authentication demo (Node + WebAuthn)",
-    url: "https://github.com/your‑username/SecureLogin"
-  },
-  {
-    name: "PhishSim",
-    desc: "Interactive phishing‑simulation platform",
-    url: "https://github.com/your‑username/PhishSim"
-  },
-  {
-    name: "CryptoVault",
-    desc: "Simple client‑side encrypted vault (AES‑GCM)",
-    url: "https://github.com/your‑username/CryptoVault"
+    name: "Python IDS/IPS",
+    desc: "An IDS/IPS build entirely in python",
+    //url: "https://github.com/c1d3r24/python-ids"
   }
 ];
 
@@ -66,14 +56,18 @@ function execCommand(raw) {
       break;
     case 'projects':
       PROJECTS.forEach(p => {
-        println(`${p.name} – ${p.desc}`);
-        println(`   ${p.url}`);
+        println(`\n\n\x1b[96m${p.name}\x1b[0m – ${p.desc}`);
+        if (p.url) {
+		println(`\x1b[92m${p.url}\x1b[0m`);
+	} else {
+		println(`\x1b[30;43m  coming soon  \x1b[0m`);
+	}
       });
       break;
     case 'blog':
-      println('Opening my blog...');
+      println('\nOpening my blog...');
       // Open in a new tab (works on static pages)
-      window.open('https://your‑username.github.io/blog/', '_blank');
+      window.open('https://nikcarlberg.com/blog/', '_blank');
       break;
     case 'clear':
       term.clear();

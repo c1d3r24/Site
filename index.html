@@ -2,55 +2,19 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Under Construction</title>
-  <style>
-    /* Reset and basic styles */
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-    body {
-      background: #f4f4f4;
-      color: #333;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      height: 100vh;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      text-align: center;
-      flex-direction: column;
-      padding: 20px;
-    }
-    h1 {
-      font-size: 3em;
-      margin-bottom: 0.5em;
-    }
-    p {
-      font-size: 1.2em;
-      margin-bottom: 1.5em;
-      color: #666;
-    }
-    .construction-icon {
-      font-size: 5em;
-      margin-bottom: 20px;
-    }
-    footer {
-      position: absolute;
-      bottom: 10px;
-      font-size: 0.9em;
-      color: #aaa;
-    }
-  </style>
+  <meta http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self' https://unpkg.com; style-src 'self' https://unpkg.com; connect-src 'none'; img-src 'self' data:;">
+  <title>myConsole • Portfolio</title>
+  <link rel="stylesheet" href="styles.css">
+  <!-- xterm.js core + fit addon -->
+  <link rel="stylesheet"
+        href="https://unpkg.com/xterm/css/xterm.css"/>
+  <script src="https://unpkg.com/xterm/lib/xterm.js"></script>
+  <script src="https://unpkg.com/xterm-addon-fit/lib/xterm-addon-fit.js"></script>
 </head>
 <body>
-  <div class="construction-icon">🚧</div>
-  <h1>Under Construction</h1>
-  <p>We’re working hard to bring you something amazing. Stay tuned!</p>
-  
-  <footer>
-    &copy; 2025 Your Company Name
-  </footer>
+  <div id="terminal-container"></div>
+
+  <script src="terminal.js"></script>
 </body>
 </html>

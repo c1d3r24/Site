@@ -6,33 +6,66 @@ html, body {
   color: #fff;
   font-family: 'Fira Code', monospace;
 }
-
+/* -------------------------------------------------------------
+   Links that appear inside the terminal output
+   ------------------------------------------------------------- */
 .term-link {
-  color: #4da6ff
-  text-decoration: none;
+    color: #4DA6FF;               /* your original blue */
+    text-decoration: none;
 }
 
 .term-link:hover {
-  text-decoration:underline;
+    text-decoration: underline;
 }
 
-/* Container that holds the xterm canvas */
+/* -------------------------------------------------------------
+   Terminal container – fills the whole viewport
+   ------------------------------------------------------------- */
 #terminal-container {
-  height: 100%;
-  width: 100%;
+    height: 100%;
+    width: 100%;
 }
 
-/* Optional: hide scrollbars that xterm may add */
+/* -------------------------------------------------------------
+   Hide XTerm scrollbars (optional)
+   ------------------------------------------------------------- */
 .xterm-viewport::-webkit-scrollbar {
-  display: none;
+    display: none;
 }
 
-/* Cursor style – block, blinking */
-.xterm-cursor {
-  background-color: #0f0 !important;
-  animation: blink 1s step-end infinite;
+/* =============================================================
+   CURSOR – ALWAYS BLINKING
+   ============================================================= */
+
+/* 1️⃣  Cursor colour – change the hex if you want a different accent */
+.xterm .xterm-cursor {
+    background-color: #00E676 !important;   /* Material “Green A400” */
 }
+
+/* 2️⃣  Force the blink animation – the !important makes sure
+      nothing else (including XTerm’s built‑in focus handling) can
+      cancel it. */
+.xterm .xterm-cursor {
+    animation: blink 1s steps(1) infinite !important;
+}
+
+/* 3️⃣  Remove the default focus outline that XTerm adds */
+.xterm:focus,
+.xterm .xterm-screen:focus,
+.xterm .xterm-textarea:focus {
+    outline: none !important;
+}
+
+/* 4️⃣  Blink keyframes – simple on/off */
 @keyframes blink {
-  0%, 50% { opacity: 1; }
-  51%, 100% { opacity: 0; }
+    0%, 49% { opacity: 1; }
+    50%, 100% { opacity: 0; }
 }
+
+/* -------------------------------------------------------------
+   OPTIONAL: subtle inner shadow for depth
+   ------------------------------------------------------------- */
+#terminal-container .xterm {
+    box-shadow: inset 0 0 8px rgba(0,0,0,0.4);
+}
+

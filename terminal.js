@@ -1,13 +1,18 @@
 // ==== INITIALIZE XTERM ======================================================
 const term = new Terminal({
   cursorBlink: true,
+  cursorStyle: 'block',
+
   theme: {
-    background: '#000',
-    foreground: '#0f0',
-    cursor: '#0f0'
+    background: '#141b1e',   
+    foreground: '#ECEFF1',  
+    cursor: '#00E676',     
+    selection: '#80CBC4', 
   },
-  fontFamily: '"Fira Code", monospace',
-  fontSize: 14,
+
+  fontFamily: `"JetBrains Mono", "Fira Code", monospace`,
+  fontSize: 14,               // keep the size you like
+  lineHeight: 1.2,            // a touch of breathing room
 });
 const fitAddon = new FitAddon.FitAddon();
 term.loadAddon(fitAddon);
@@ -16,8 +21,87 @@ term.loadAddon(fitAddon);
 term.open(document.getElementById('terminal-container'));
 fitAddon.fit();               // size to container
 window.addEventListener('resize', () => fitAddon.fit());
+term.focus();
+term.element?.addEventListener('click', () => term.focus());
+
 
 // ==== EXTRA FUNCTIONS =======================================================
+
+function printCenteredWrapped(text, options = {}) {
+  // ──────── Options ────────────────────────────────────────────────
+  const {
+    colour = '\x1b[93m',   // bright yellow (same as before)
+    maxLineLength = 60,    // <-- hard‑wrap width you control
+    terminalCols = term.cols || 80   // fallback if term.cols is undefined
+  } = options;
+
+  // ──────── Split into words ───────────────────────────────────────
+  const words = text.split(/\s+/);
+
+  // ──────── Build lines that never exceed maxLineLength ─────────────
+  const lines = [];
+  let curLine = [];
+
+  for (const w of words) {
+    const tentative = curLine.concat(w).join(' ');
+    if (tentative.length > maxLineLength) {
+      // Flush the current line and start a new one
+      lines.push(curLine.join(' '));
+      curLine = [w];
+    } else {
+      curLine.push(w);
+    }
+  }
+  if (curLine.length) lines.push(curLine.join(' '));
+
+  // ──────── Write each line centred inside the *actual* terminal width
+  for (const line of lines) {
+    const padding = Math.max(
+      0,
+      Math.floor((terminalCols - line.length) / 2)
+    );
+    const paddedLine = ' '.repeat(padding) + line;
+    term.write(colour + paddedLine + '\x1b[0m\r\n');
+  }
+}
+
+/* ------------------------------------------------------------------
+   3️⃣  SHOW‑ABOUT WRAPPER (calls the helper)
+   ------------------------------------------------------------------ */
+function showAbout() {
+  // Optional blank line before the block – makes it look cleaner
+  term.write('\r\n');
+
+  // Call the formatter – you can change maxLineLength here if you wish
+  printCenteredWrapped(ABOUT_TEXT, {
+    colour: '\x1b[93m',   // keep the yellow you used before
+    maxLineLength: 150     // <-- tweak this number to any width you like
+  });
+
+  // Optional blank line after the block so the prompt isn’t glued
+  term.write('\r\n');
+}
+
+
+
+function clearScreen() {
+term.reset();                 // clears screen & homes cursor (no scroll‑back clear)
+  term.write('\x1b[3J');       // now wipe the scroll‑back
+  commandBuffer = '';
+  historyIndex = commandHistory.length;
+}
+
+function error(msg) {
+  println(`\x1b[31m✖ ${msg}\x1b[0m`);
+}
+
+function replaceCurrentLine(text) {
+  //  \x1b[2K  → erase the entire line
+  //  \r       → carriage return (back to column 0)
+  //  PROMPT   → write the prompt again
+  term.write('\x1b[2K\r' + PROMPT + text);
+  commandBuffer = text;   // keep the internal buffer identical
+}
 
 /**
  * Emit an OSC 8 hyperlink that XTerm.js renders as a clickable <a>.
@@ -130,8 +214,24 @@ const HELP_TEXT = `Available commands:
   projects        List my open‑source projects
   blog            Open my technical blog
   clear           Clear the screen
-  echo <msg>      Echo back a message
-`;
+  echo <msg>      Echo back a message`;
+
+const COMMANDS = [
+  'help',
+  'about',
+  'projects',
+  'blog',
+  'clear',
+  'echo',
+];
+
+const ABOUT_TEXT = `
+I’m a recent Cybersecurity graduate (B.S.) from Oregon Tech with a minor in Business. My studies focused on Network Security and Ethical Hacking, giving me solid hands‑on experience with firewalls, intrusion detection, penetration testing, and secure network design.
+
+I’m a problem‑solver who thrives on dissecting complex challenges and turning them into actionable solutions. Working on group projects and labs sharpened my teamwork skills, so I’m comfortable collaborating in fast‑paced environments and communicating technical concepts to both technical and non‑technical stakeholders.
+
+Combining a strong security foundation with business insight, I aim to protect organizations while aligning security initiatives with broader strategic goals.
+`.trim();
 
 const PROJECTS = [
   {
@@ -139,6 +239,7 @@ const PROJECTS = [
     desc: "An IDS/IPS build entirely in python",
     //url: "https://github.com/c1d3r24/python-ids"
   },
+
   {
     name: "Terminal Styled Portfolio",
     desc: "The code for this website",
@@ -164,16 +265,16 @@ function execCommand(raw) {
       println(HELP_TEXT);
       break;
     case 'about':
-      println(`\x1b[93mI'm a recent Cyber‑Security graduate passionate about secure coding, red‑team tactics, and privacy‑first web design.\x1b[0m`);
+      showAbout();
       break;
     case 'projects':
       PROJECTS.forEach(p => {
-        println(`\n\x1b[96m${p.name}\x1b[0m – ${p.desc}`);
+        println(`\x1b[96m${p.name}\x1b[0m – ${p.desc}`);
         if (p.url) {
 		styledPrintLink('Link: ', p.url, {
 		});
 	} else {
-		println(`\x1b[30;43m  coming soon  \x1b[0m`);
+		term.writeln(`\x1b[30;43m  coming soon  \x1b[0m`);
 	}
       });
       break;
@@ -183,7 +284,7 @@ function execCommand(raw) {
       window.open('https://nikcarlberg.com/blog/', '_blank');
       break;
     case 'clear':
-      term.clear();
+      clearScreen();
       break;
     case 'echo':
       println(args.join(' '));
@@ -192,56 +293,116 @@ function execCommand(raw) {
       // empty line – do nothing
       break;
     default:
-      println(`command not found: ${cmd}`);
+      error(`command not found: ${cmd}`);
   }
 }
 
 // ==== INPUT HANDLING =======================================================
 let commandBuffer = '';
 
+const PROMPT = 'nik@portfolio:~$ ';
+
 term.prompt = () => {
-  term.write('\r\nnik@portfolio:~$ ');
+  term.write('\r\n' + PROMPT);
 };
 
 
+
 const commandHistory = [];
-let historyIndex = -1;
+let historyIndex = commandHistory.length;
 
 term.onKey(({ key, domEvent }) => {
-  const printable = !domEvent.ctrlKey && !domEvent.altKey && !domEvent.metaKey && domEvent.key.length === 1;
+  const printable =
+    !domEvent.ctrlKey &&
+    !domEvent.altKey &&
+    !domEvent.metaKey &&
+    domEvent.key.length === 1;   // a normal character (letter, number, symbol)
 
+  /* -------------------------------------------------------------
+     ENTER – run the command
+     ------------------------------------------------------------- */
   if (domEvent.key === 'Enter') {
-    execCommand(commandBuffer);
-    if (commandBuffer.trim() !== '') {
-      commandHistory.push(commandBuffer);
+    const trimmed = commandBuffer.trim();
+
+    execCommand(trimmed);                     // your existing dispatcher
+
+    // Store non‑empty commands in history
+    if (trimmed !== '') {
+      commandHistory.push(trimmed);
     }
+    // Reset history pointer and buffer
     historyIndex = commandHistory.length;
     commandBuffer = '';
-    term.prompt();
-  } else if (domEvent.key === 'Backspace') {
+    term.write('\r\n' + PROMPT);              // fresh prompt
+    return;
+  }
+
+  /* -------------------------------------------------------------
+     BACKSPACE – delete one character
+     ------------------------------------------------------------- */
+  if (domEvent.key === 'Backspace') {
     if (commandBuffer.length > 0) {
+      term.write('\b \b');                    // erase on screen
       commandBuffer = commandBuffer.slice(0, -1);
-      term.write('\b \b');
     }
-  } else if (domEvent.key === 'ArrowUp') {
+    return;
+  }
+
+  /* -------------------------------------------------------------
+     ARROW UP – previous command
+     ------------------------------------------------------------- */
+  if (domEvent.key === 'ArrowUp') {
     if (historyIndex > 0) {
-      term.write('\x1b[2K\r> ');
       historyIndex--;
-      commandBuffer = commandHistory[historyIndex];
-      term.write(commandBuffer);
+      replaceCurrentLine(commandHistory[historyIndex] ?? '');
     }
-  } else if (domEvent.key === 'ArrowDown') {
+    return;
+  }
+
+  /* -------------------------------------------------------------
+     ARROW DOWN – next command (or clear line)
+     ------------------------------------------------------------- */
+  if (domEvent.key === 'ArrowDown') {
     if (historyIndex < commandHistory.length - 1) {
-      term.write('\x1b[2K\r> ');
       historyIndex++;
-      commandBuffer = commandHistory[historyIndex];
-      term.write(commandBuffer);
+      replaceCurrentLine(commandHistory[historyIndex] ?? '');
     } else {
-      term.write('\x1b[2K\r> ');
+      // Past the newest entry → clear the line
       historyIndex = commandHistory.length;
-      commandBuffer = '';
+      replaceCurrentLine('');
     }
-  } else if (printable) {
+    return;
+  }
+
+  /* -------------------------------------------------------------
+     TAB – auto‑completion
+     ------------------------------------------------------------- */
+  if (domEvent.key === 'Tab') {
+    domEvent.preventDefault();               // stop the browser from moving focus
+
+    const matches = COMMANDS.filter(cmd =>
+      cmd.startsWith(commandBuffer)
+    );
+
+    if (matches.length === 1) {
+      // Exactly one match → fill the rest of the command
+      const remainder = matches[0].slice(commandBuffer.length);
+      term.write(remainder);
+      commandBuffer += remainder;
+    } else if (matches.length > 1) {
+      // Multiple possibilities → show them on a new line
+      term.write('\r\n');
+      println(matches.join('   '));          // space‑separated list
+      term.write(PROMPT + commandBuffer);    // redraw prompt + what user typed
+    }
+    // If no matches → silently ignore
+    return;
+  }
+
+  /* -------------------------------------------------------------
+     PRINTABLE characters – just add them to the buffer
+     ------------------------------------------------------------- */
+  if (printable) {
     commandBuffer += key;
     term.write(key);
   }

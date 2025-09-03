@@ -327,18 +327,18 @@ case 'projects':
 
     case 'blog':
       println('\nOpening my blog...');
-      window.open('https://blank.com/blog/', '_blank');
+      window.open('https://nikcarlberg.com/blog/', '_blank');
       break;
 
 case 'ls':
   println(`${COLORS.projectName}GitHub${COLORS.reset}`);
-  styledPrintLink('Link:', 'https://github.com/yourusername', {
+  styledPrintLink('Link:', 'https://github.com/c1d3r24', {
     labelColor: '#FFD166',
     urlColor: '#4DA6FF'
   });
 
   println(`${COLORS.projectName}LinkedIn${COLORS.reset}`);
-  styledPrintLink('Link:', 'https://linkedin.com/in/yourprofile', {
+  styledPrintLink('Link:', 'https://www.linkedin.com/in/nik-carlberg-148945355', {
     labelColor: '#FFD166',
     urlColor: '#4DA6FF'
   });

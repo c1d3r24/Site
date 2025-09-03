@@ -1,19 +1,45 @@
 // ==== INITIALIZE XTERM ======================================================
+const COLORS = {
+  asciiArt: '\x1b[38;2;0;255;106m',   // Neon Green (changed to green as you wanted)
+  welcome: '\x1b[38;2;77;166;255m',   // Electric Blue
+  info: '\x1b[38;2;255;209;102m',     // Warm Yellow
+  prompt: '\x1b[38;2;0;230;118m',     // Neon Green (same as asciiArt green)
+  error: '\x1b[38;2;255;85;85m',      // Bright Red
+  reset: '\x1b[0m',
+
+projectName: '\x1b[38;2;70;130;180m', // Steel Blue (not the same as prompt or welcome)
+  linkLabel:   '\x1b[38;2;160;160;160m', // Neutral Gray
+  linkUrl:     '\x1b[38;2;0;191;255m',   // Deep Sky Blue
+
+};
+
+
 const term = new Terminal({
   cursorBlink: true,
   cursorStyle: 'block',
 
-  theme: {
-    background: '#141b1e',   
-    foreground: '#ECEFF1',  
-    cursor: '#00E676',     
-    selection: '#80CBC4', 
-  },
+theme: {
+  background: '#0A0B12',    // Almost Black with a hint of blue — deeper than navy for less eye strain
+  foreground: '#C7D0D9',    // Soft Light Gray with subtle cool tint — easier on eyes than pure white
+  cursor: '#39FF14',        // Neon Lime Green — brighter and more vivid for visibility
+  selection: '#084B49',     // Dark Teal — elegant and not too harsh for text selection
+  black: '#12151E',         // Dark slate gray for bold text or background highlights
+  red: '#FF4C4C',           // Vivid red for errors and alerts
+  green: '#00FF6A',         // Neon green for success messages or highlights
+  yellow: '#FFC75F',        // Warm amber for warnings or info accents
+  blue: '#00D1FF',          // Bright cyan for links or commands
+  magenta: '#FF6AC1',       // Soft pink for highlights, but subtle (avoid purple overload)
+  cyan: '#00FFF7',          // Electric cyan for cool techy vibes
+  white: '#E0E6F0',         // Off-white for standard bright text
+  brightBlack: '#5C6773',   // Medium gray for disabled or less important text
+  brightWhite: '#F5F7FA',   // Almost white for bold or important text
+},
 
   fontFamily: `"JetBrains Mono", "Fira Code", monospace`,
-  fontSize: 14,               // keep the size you like
-  lineHeight: 1.2,            // a touch of breathing room
+  fontSize: 16,
+  lineHeight: 1.2,
 });
+
 const fitAddon = new FitAddon.FitAddon();
 term.loadAddon(fitAddon);
 
@@ -74,7 +100,7 @@ function showAbout() {
 
   // Call the formatter – you can change maxLineLength here if you wish
   printCenteredWrapped(ABOUT_TEXT, {
-    colour: '\x1b[93m',   // keep the yellow you used before
+    colour: '\x1b[37m',  
     maxLineLength: 150     // <-- tweak this number to any width you like
   });
 
@@ -210,15 +236,17 @@ function hexToRgb(hex) {
 // ==== COMMAND DEFINITIONS ===================================================
 const HELP_TEXT = `Available commands:
   help            Show this help
-  about           Who I am
-  projects        List my open‑source projects
+  whoami          About me
+  ls              List my social media links
+  projects        My open‑source projects
   blog            Open my technical blog
   clear           Clear the screen
   echo <msg>      Echo back a message`;
 
 const COMMANDS = [
   'help',
-  'about',
+  'whoami',
+  'ls',
   'projects',
   'blog',
   'clear',
@@ -247,6 +275,20 @@ const PROJECTS = [
   }
 ];
 
+
+const SOCIAL_LINKS = [
+  {
+    name: 'GitHub',
+    url: 'https://github.com/c1d3r24',
+  },
+  {
+    name: 'LinkedIn',
+    url: 'https://www.linkedin.com/in/nik-carlberg-148945355',
+  }
+];
+
+
+
 // Simple helper to print a line with a trailing newline
 function println(text = '') {
   term.write('\r\n');
@@ -264,34 +306,56 @@ function execCommand(raw) {
     case 'help':
       println(HELP_TEXT);
       break;
-    case 'about':
+
+    case 'whoami':
       showAbout();
       break;
-    case 'projects':
-      PROJECTS.forEach(p => {
-        println(`\x1b[96m${p.name}\x1b[0m – ${p.desc}`);
-        if (p.url) {
-		styledPrintLink('Link: ', p.url, {
-		});
-	} else {
-		term.writeln(`\x1b[30;43m  coming soon  \x1b[0m`);
-	}
+
+case 'projects':
+  PROJECTS.forEach(p => {
+    println(`${COLORS.projectName}${p.name}${COLORS.reset} – ${p.desc}`);
+    if (p.url) {
+      styledPrintLink('Link:', p.url, {
+        labelColor: '#FFD166',   // warm yellow (matches COLORS.info)
+        urlColor: '#4DA6FF'      // electric blue (matches COLORS.welcome)
       });
-      break;
+    } else {
+      term.writeln('\x1b[30;43m  coming soon  \x1b[0m');
+    }
+  });
+  break;
+
     case 'blog':
       println('\nOpening my blog...');
-      // Open in a new tab (works on static pages)
-      window.open('https://nikcarlberg.com/blog/', '_blank');
+      window.open('https://blank.com/blog/', '_blank');
       break;
+
+case 'ls':
+  println(`${COLORS.projectName}GitHub${COLORS.reset}`);
+  styledPrintLink('Link:', 'https://github.com/yourusername', {
+    labelColor: '#FFD166',
+    urlColor: '#4DA6FF'
+  });
+
+  println(`${COLORS.projectName}LinkedIn${COLORS.reset}`);
+  styledPrintLink('Link:', 'https://linkedin.com/in/yourprofile', {
+    labelColor: '#FFD166',
+    urlColor: '#4DA6FF'
+  });
+  break;
+
     case 'clear':
       clearScreen();
       break;
+
     case 'echo':
       println(args.join(' '));
       break;
+
     case '':
       // empty line – do nothing
       break;
+
     default:
       error(`command not found: ${cmd}`);
   }
@@ -300,7 +364,7 @@ function execCommand(raw) {
 // ==== INPUT HANDLING =======================================================
 let commandBuffer = '';
 
-const PROMPT = 'nik@portfolio:~$ ';
+const PROMPT = '\x1b[32mnik@portfolio:~$ \x1b[0m';
 
 term.prompt = () => {
   term.write('\r\n' + PROMPT);
@@ -411,7 +475,15 @@ term.onKey(({ key, domEvent }) => {
 
 
 // ==== STARTUP MESSAGE ======================================================
-term.writeln('Welcome to myConsole – a terminal‑styled portfolio.');
-term.writeln('Type "help" for a list of commands.');
+
+const asciiArt = `
+  _   _ _ _    _        _____                             _____ _          _ _ \r\n | \\ | (_) |  ( )      \/ ____|                           \/ ____| |        | | |\r\n |  \\| |_| | _|\/ ___  | (___   ___  ___ _   _ _ __ ___  | (___ | |__   ___| | |\r\n | . \` | | |\/ \/ \/ __|  \\___ \\ \/ _ \\\/ __| | | | \'__\/ _ \\  \\___ \\| \'_ \\ \/ _ \\ | |\r\n | |\\  | |   <  \\__ \\  ____) |  __\/ (__| |_| | | |  __\/  ____) | | | |  __\/ | |\r\n |_| \\_|_|_|\\_\\ |___\/ |_____\/ \\___|\\___|\\__,_|_|  \\___| |_____\/|_| |_|\\___|_|_|\r\n                                                                               \r\n
+`;
+
+term.writeln(`${COLORS.asciiArt}${asciiArt}${COLORS.reset}`);
+
+term.writeln(`${COLORS.welcome}Welcome to nikcarlberg.com – a terminal‑styled portfolio.${COLORS.reset}`);
+term.writeln(`${COLORS.info}Type "help" for a list of commands.${COLORS.reset}`);
+
 term.prompt();
 

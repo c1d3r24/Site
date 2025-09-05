@@ -331,17 +331,14 @@ case 'projects':
       break;
 
 case 'ls':
-  println(`${COLORS.projectName}GitHub${COLORS.reset}`);
-  styledPrintLink('Link:', 'https://github.com/c1d3r24', {
-    labelColor: '#FFD166',
-    urlColor: '#4DA6FF'
-  });
+  const links = SOCIAL_LINKS
+    .filter(link => link.url) // skip empty ones
+    .map(link => {
+      const label = `\x1b[38;2;0;191;255m${link.name}\x1b[0m`; // color: Deep Sky Blue
+      return `\x1b]8;;${link.url}\x07${label}\x1b]8;;\x07`;   // OSC 8 format
+    });
 
-  println(`${COLORS.projectName}LinkedIn${COLORS.reset}`);
-  styledPrintLink('Link:', 'https://www.linkedin.com/in/nik-carlberg-148945355', {
-    labelColor: '#FFD166',
-    urlColor: '#4DA6FF'
-  });
+  term.writeln('\r\n' + links.join('     ') + '\r\n'); // space between items
   break;
 
     case 'clear':
@@ -351,6 +348,16 @@ case 'ls':
     case 'echo':
       println(args.join(' '));
       break;
+
+	case 'sudo':
+      println("🛑 Nice try. You're not root here!");
+      break;
+
+    case 'exit':
+     println("👋 Thanks for stopping by!");
+     break;
+
+
 
     case '':
       // empty line – do nothing

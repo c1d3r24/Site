@@ -331,14 +331,21 @@ case 'projects':
       break;
 
 case 'ls':
+  const linkColorMap = {
+    GitHub:   '\x1b[38;2;240;240;240m', // Light gray (GitHub = neutral)
+    LinkedIn: '\x1b[38;2;10;102;194m',  // LinkedIn blue (#0A66C2)
+    // Add more platforms here if needed
+  };
+
   const links = SOCIAL_LINKS
-    .filter(link => link.url) // skip empty ones
+    .filter(link => link.url)
     .map(link => {
-      const label = `\x1b[38;2;0;191;255m${link.name}\x1b[0m`; // color: Deep Sky Blue
-      return `\x1b]8;;${link.url}\x07${label}\x1b]8;;\x07`;   // OSC 8 format
+      const color = linkColorMap[link.name] || '\x1b[0m'; // default reset if unknown
+      const label = `${color}${link.name}\x1b[0m`;
+      return `\x1b]8;;${link.url}\x07${label}\x1b]8;;\x07`;
     });
 
-  term.writeln('\r\n' + links.join('     ') + '\r\n'); // space between items
+  term.writeln('\r\n' + links.join('     ')); // add spacing between links
   break;
 
     case 'clear':

@@ -1,0 +1,15 @@
+{
+  "name": "nikportfolio",
+  "type": "module",
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview"
+  },
+  "dependencies": {
+    "3d-force-graph": "^1.79.1",
+    "astro": "^5.0.0",
+    "three-spritetext": "^1.10.0"
+  }
+}

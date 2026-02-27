@@ -1,0 +1,331 @@
+---
+// Landing page — choose terminal or space/graph view
+---
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Nik Carlberg — Portfolio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&display=swap"
+    rel="stylesheet"
+  />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:       #0A0B12;
+      --fg:       #C7D0D9;
+      --dim:      #5C6773;
+      --green:    #00FF6A;
+      --blue:     #4DA6FF;
+      --cyan:     #00D1FF;
+      --yellow:   #FFC75F;
+      --card-bg:  #0D0F1A;
+      --border:   #1E2235;
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--fg);
+      font-family: 'JetBrains Mono', 'Fira Code', monospace;
+      overflow: hidden;
+    }
+
+    /* ── Star-field canvas ── */
+    #stars {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ── Main layout ── */
+    .landing {
+      position: relative;
+      z-index: 1;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 48px;
+      padding: 24px;
+    }
+
+    /* ── Header ── */
+    .header {
+      text-align: center;
+    }
+    .header h1 {
+      font-size: clamp(1.4rem, 4vw, 2.2rem);
+      font-weight: 500;
+      letter-spacing: -0.02em;
+      color: var(--fg);
+    }
+    .header h1 .at   { color: var(--dim); }
+    .header h1 .host { color: var(--green); }
+    .cursor-blink {
+      display: inline-block;
+      width: 2px;
+      height: 1.1em;
+      background: var(--green);
+      vertical-align: text-bottom;
+      margin-left: 2px;
+      animation: blink 1s steps(1) infinite;
+    }
+    @keyframes blink { 0%,49%{opacity:1} 50%,100%{opacity:0} }
+
+    .header p {
+      margin-top: 8px;
+      font-size: 0.8rem;
+      color: var(--dim);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    /* ── Cards ── */
+    .cards {
+      display: flex;
+      gap: 24px;
+      align-items: stretch;
+    }
+
+    .card {
+      text-decoration: none;
+      color: inherit;
+      width: 280px;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+      cursor: pointer;
+    }
+
+    /* Terminal card hover */
+    .card.terminal-card:hover {
+      transform: translateY(-6px);
+      border-color: var(--green);
+      box-shadow: 0 0 28px #00FF6A22, 0 0 8px #00FF6A11;
+    }
+
+    /* Explore card hover */
+    .card.explore-card:hover {
+      transform: translateY(-6px);
+      border-color: var(--cyan);
+      box-shadow: 0 0 28px #00D1FF22, 0 0 8px #00D1FF11;
+    }
+
+    /* ── Card preview area ── */
+    .preview {
+      height: 160px;
+      background: #080910;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      overflow: hidden;
+    }
+
+    /* Terminal preview */
+    .term-preview {
+      font-size: 11px;
+      line-height: 1.6;
+      color: var(--fg);
+      width: 100%;
+    }
+    .term-preview .ps  { color: var(--green); }
+    .term-preview .out { color: var(--dim); padding-left: 8px; }
+    .term-preview .cursor-line .ps { animation: none; }
+    .term-cursor {
+      display: inline-block;
+      width: 7px;
+      height: 13px;
+      background: var(--green);
+      vertical-align: middle;
+      animation: blink 1s steps(1) infinite;
+    }
+
+    /* Graph SVG preview */
+    .graph-preview {
+      width: 100%;
+      height: 100%;
+    }
+    .node-center { fill: var(--yellow); }
+    .node-section { fill: var(--blue); }
+    .node-skill   { fill: var(--green); }
+    .node-contact { fill: var(--cyan); }
+    .edge { stroke: var(--blue); stroke-opacity: 0.35; stroke-width: 1; }
+
+    .float1 { animation: float1 4s ease-in-out infinite; }
+    .float2 { animation: float2 3.5s ease-in-out infinite; }
+    .float3 { animation: float3 5s ease-in-out infinite; }
+    .float4 { animation: float4 4.5s ease-in-out infinite; }
+
+    @keyframes float1 { 0%,100%{transform:translate(0,0)} 50%{transform:translate(2px,-3px)} }
+    @keyframes float2 { 0%,100%{transform:translate(0,0)} 50%{transform:translate(-3px,2px)} }
+    @keyframes float3 { 0%,100%{transform:translate(0,0)} 50%{transform:translate(3px,2px)} }
+    @keyframes float4 { 0%,100%{transform:translate(0,0)} 50%{transform:translate(-2px,-3px)} }
+
+    .pulse {
+      animation: pulse 2.5s ease-in-out infinite;
+      transform-origin: center;
+    }
+    @keyframes pulse { 0%,100%{r:10} 50%{r:12} }
+
+    /* ── Card info section ── */
+    .card-info {
+      padding: 18px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .card-info h2 {
+      font-size: 1rem;
+      font-weight: 500;
+      letter-spacing: 0.04em;
+    }
+    .terminal-card .card-info h2 { color: var(--green); }
+    .explore-card  .card-info h2 { color: var(--cyan);  }
+
+    .card-info p {
+      font-size: 0.72rem;
+      color: var(--fg);
+      opacity: 0.7;
+    }
+    .tag {
+      margin-top: 6px;
+      font-size: 0.65rem;
+      color: var(--dim);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    /* ── Footer hint ── */
+    .hint {
+      font-size: 0.65rem;
+      color: var(--dim);
+      letter-spacing: 0.06em;
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 640px) {
+      .cards { flex-direction: column; }
+      .card  { width: 100%; max-width: 340px; }
+      html, body { overflow: auto; }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="stars"></canvas>
+
+  <div class="landing">
+    <div class="header">
+      <h1>
+        nik<span class="at">@</span><span class="host">portfolio</span><span class="cursor-blink"></span>
+      </h1>
+      <p>Cybersecurity Engineer</p>
+    </div>
+
+    <div class="cards">
+
+      <!-- Terminal card -->
+      <a href="/terminal" class="card terminal-card">
+        <div class="preview">
+          <div class="term-preview">
+            <div><span class="ps">$ </span>whoami</div>
+            <div class="out">nik carlberg</div>
+            <div><span class="ps">$ </span>projects</div>
+            <div class="out">python ids/ips</div>
+            <div class="out">terminal portfolio</div>
+            <div><span class="ps">$ </span><span class="term-cursor"></span></div>
+          </div>
+        </div>
+        <div class="card-info">
+          <h2>Terminal</h2>
+          <p>Interactive command-line interface</p>
+          <span class="tag">For the technically inclined</span>
+        </div>
+      </a>
+
+      <!-- Explore card -->
+      <a href="/space" class="card explore-card">
+        <div class="preview">
+          <svg class="graph-preview" viewBox="0 0 220 160" xmlns="http://www.w3.org/2000/svg">
+            <!-- Edges -->
+            <line class="edge" x1="110" y1="80" x2="55"  y2="35" />
+            <line class="edge" x1="110" y1="80" x2="165" y2="35" />
+            <line class="edge" x1="110" y1="80" x2="50"  y2="125" />
+            <line class="edge" x1="110" y1="80" x2="170" y2="125" />
+            <line class="edge" x1="55"  y1="35" x2="20"  y2="15" />
+            <line class="edge" x1="55"  y1="35" x2="85"  y2="10" />
+            <line class="edge" x1="50"  y1="125" x2="20" y2="150" />
+            <!-- Center node -->
+            <circle class="node-center pulse" cx="110" cy="80" r="10" />
+            <!-- Section nodes -->
+            <g class="float1"><circle class="node-section" cx="55"  cy="35"  r="6" /></g>
+            <g class="float2"><circle class="node-section" cx="165" cy="35"  r="6" /></g>
+            <g class="float3"><circle class="node-section" cx="50"  cy="125" r="6" /></g>
+            <g class="float4"><circle class="node-section" cx="170" cy="125" r="6" /></g>
+            <!-- Leaf nodes -->
+            <g class="float2"><circle class="node-skill" cx="20"  cy="15"  r="4" /></g>
+            <g class="float3"><circle class="node-skill" cx="85"  cy="10"  r="4" /></g>
+            <g class="float1"><circle class="node-contact" cx="20" cy="150" r="4" /></g>
+          </svg>
+        </div>
+        <div class="card-info">
+          <h2>Explore</h2>
+          <p>Interactive knowledge graph</p>
+          <span class="tag">For everyone</span>
+        </div>
+      </a>
+
+    </div>
+
+    <span class="hint">click a card to enter</span>
+  </div>
+
+  <script is:inline>
+    // ── Star-field ──────────────────────────────────────────
+    const canvas = document.getElementById('stars');
+    const ctx    = canvas.getContext('2d');
+
+    function resize() {
+      canvas.width  = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    resize();
+    window.addEventListener('resize', resize);
+
+    const STAR_COUNT = 180;
+    const stars = Array.from({ length: STAR_COUNT }, () => ({
+      x:    Math.random(),
+      y:    Math.random(),
+      r:    Math.random() * 1.2 + 0.3,
+      op:   Math.random() * 0.6 + 0.2,
+      dop:  (Math.random() - 0.5) * 0.008,
+    }));
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      for (const s of stars) {
+        s.op += s.dop;
+        if (s.op > 0.85 || s.op < 0.1) s.dop *= -1;
+        ctx.beginPath();
+        ctx.arc(s.x * canvas.width, s.y * canvas.height, s.r, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(255,255,255,${s.op})`;
+        ctx.fill();
+      }
+      requestAnimationFrame(draw);
+    }
+    draw();
+  </script>
+</body>
+</html>

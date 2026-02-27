@@ -1,0 +1,42 @@
+---
+// Terminal page — full-screen xterm.js experience
+---
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Terminal — Nik Carlberg</title>
+  <link rel="stylesheet" href="https://unpkg.com/xterm/css/xterm.css" />
+  <link rel="stylesheet" href="/styles.css" />
+  <style>
+    .back-btn {
+      position: fixed;
+      top: 12px;
+      right: 16px;
+      z-index: 100;
+      background: transparent;
+      border: 1px solid #00FF6A44;
+      color: #00FF6A;
+      font-family: 'JetBrains Mono', 'Fira Code', monospace;
+      font-size: 12px;
+      padding: 4px 10px;
+      cursor: pointer;
+      text-decoration: none;
+      transition: border-color 0.2s, background 0.2s;
+    }
+    .back-btn:hover {
+      border-color: #00FF6A;
+      background: #00FF6A11;
+    }
+  </style>
+</head>
+<body>
+  <a href="/" class="back-btn">← home</a>
+  <div id="terminal-container"></div>
+
+  <script is:inline src="https://unpkg.com/xterm/lib/xterm.js"></script>
+  <script is:inline src="https://unpkg.com/xterm-addon-fit/lib/xterm-addon-fit.js"></script>
+  <script is:inline src="/terminal.js"></script>
+</body>
+</html>

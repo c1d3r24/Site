@@ -1,0 +1,400 @@
+---
+// Space/graph view — interactive 3D force-directed node graph
+---
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Explore — Nik Carlberg</title>
+  <link
+    href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500&display=swap"
+    rel="stylesheet"
+  />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:     #0A0B12;
+      --fg:     #C7D0D9;
+      --dim:    #5C6773;
+      --green:  #00FF6A;
+      --blue:   #4DA6FF;
+      --cyan:   #00D1FF;
+      --yellow: #FFC75F;
+      --panel:  #0D0F1Aee;
+      --border: #1E2235;
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--fg);
+      font-family: 'JetBrains Mono', 'Fira Code', monospace;
+      overflow: hidden;
+    }
+
+    #graph {
+      position: fixed;
+      inset: 0;
+    }
+
+    /* ── Back button ── */
+    .back-btn {
+      position: fixed;
+      top: 16px;
+      left: 16px;
+      z-index: 100;
+      background: transparent;
+      border: 1px solid #4DA6FF33;
+      color: var(--blue);
+      font-family: inherit;
+      font-size: 12px;
+      padding: 5px 12px;
+      cursor: pointer;
+      text-decoration: none;
+      border-radius: 3px;
+      transition: border-color 0.2s, background 0.2s;
+    }
+    .back-btn:hover {
+      border-color: var(--blue);
+      background: #4DA6FF11;
+    }
+
+    /* ── Hint overlay ── */
+    #hint {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 100;
+      font-size: 11px;
+      color: var(--dim);
+      letter-spacing: 0.08em;
+      pointer-events: none;
+      transition: opacity 0.6s;
+    }
+
+    /* ── Side panel ── */
+    #panel {
+      position: fixed;
+      top: 0;
+      right: 0;
+      height: 100%;
+      width: 320px;
+      background: var(--panel);
+      border-left: 1px solid var(--border);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      z-index: 50;
+      display: flex;
+      flex-direction: column;
+      padding: 32px 24px;
+      gap: 16px;
+      transform: translateX(100%);
+      transition: transform 0.3s ease;
+    }
+    #panel.open {
+      transform: translateX(0);
+    }
+
+    .panel-close {
+      position: absolute;
+      top: 14px;
+      right: 16px;
+      background: none;
+      border: none;
+      color: var(--dim);
+      font-family: inherit;
+      font-size: 18px;
+      cursor: pointer;
+      padding: 4px 8px;
+      line-height: 1;
+    }
+    .panel-close:hover { color: var(--fg); }
+
+    .panel-group-badge {
+      font-size: 10px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      padding: 3px 8px;
+      border-radius: 3px;
+      display: inline-block;
+      width: fit-content;
+    }
+
+    .panel-name {
+      font-size: 1.3rem;
+      font-weight: 500;
+      line-height: 1.2;
+    }
+
+    .panel-desc {
+      font-size: 0.82rem;
+      color: var(--fg);
+      opacity: 0.75;
+      line-height: 1.6;
+    }
+
+    .panel-link {
+      display: inline-block;
+      margin-top: 4px;
+      font-size: 0.75rem;
+      color: var(--blue);
+      text-decoration: none;
+      border: 1px solid #4DA6FF33;
+      padding: 6px 12px;
+      border-radius: 3px;
+      transition: border-color 0.2s, background 0.2s;
+    }
+    .panel-link:hover {
+      border-color: var(--blue);
+      background: #4DA6FF11;
+    }
+
+    .panel-badge {
+      display: inline-block;
+      font-size: 0.7rem;
+      background: #FFC75F22;
+      color: var(--yellow);
+      border: 1px solid #FFC75F44;
+      padding: 4px 10px;
+      border-radius: 3px;
+      letter-spacing: 0.06em;
+    }
+
+    .panel-divider {
+      height: 1px;
+      background: var(--border);
+    }
+
+    @media (max-width: 640px) {
+      #panel {
+        width: 100%;
+        height: auto;
+        top: auto;
+        bottom: 0;
+        right: 0;
+        border-left: none;
+        border-top: 1px solid var(--border);
+        height: 50vh;
+        transform: translateY(100%);
+      }
+      #panel.open { transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+
+  <div id="graph"></div>
+
+  <a href="/" class="back-btn">← home</a>
+
+  <div id="hint">click any node to explore · drag to rotate · scroll to zoom</div>
+
+  <!-- Side panel -->
+  <div id="panel">
+    <button class="panel-close" id="panel-close">✕</button>
+    <div id="panel-badge" class="panel-group-badge"></div>
+    <div id="panel-name"  class="panel-name"></div>
+    <div class="panel-divider"></div>
+    <div id="panel-desc"  class="panel-desc"></div>
+    <div id="panel-action"></div>
+  </div>
+
+  <script>
+    import ForceGraph3D from '3d-force-graph';
+    import SpriteText   from 'three-spritetext';
+
+    // ── Palette ────────────────────────────────────────────────
+    const COLORS = {
+      center:  '#FFC75F',
+      section: '#4DA6FF',
+      skill:   '#00FF6A',
+      project: '#70829A',
+      contact: '#00D1FF',
+    };
+
+    const GROUP_LABEL = {
+      center:  'You are here',
+      section: 'Section',
+      skill:   'Skill',
+      project: 'Project',
+      contact: 'Contact',
+    };
+
+    // ── Graph data ──────────────────────────────────────────────
+    const nodes = [
+      // Center
+      {
+        id: 'nik', name: 'Nik Carlberg', group: 'center', val: 18,
+        desc: 'Cybersecurity graduate (B.S.) from Oregon Tech with a minor in Business. Focused on network security, ethical hacking, and building practical security tooling.',
+      },
+      // Sections
+      { id: 'about',    name: 'About',    group: 'section', val: 8,
+        desc: 'Recent grad from Oregon Tech. I bridge security fundamentals with business context — pen testing, secure network design, and clear communication to non-technical stakeholders.' },
+      { id: 'projects', name: 'Projects', group: 'section', val: 8,
+        desc: 'Open-source projects I\'ve built, focused on practical security tooling.' },
+      { id: 'skills',   name: 'Skills',   group: 'section', val: 8,
+        desc: 'Core technical disciplines from my degree and hands-on work.' },
+      { id: 'contact',  name: 'Contact',  group: 'section', val: 8,
+        desc: 'Find me online.' },
+      // Skills
+      { id: 'cybersec',    name: 'Cybersecurity', group: 'skill', val: 4,
+        desc: 'Foundational expertise in threat modeling, vulnerability assessment, and security architecture.' },
+      { id: 'networking',  name: 'Networking',    group: 'skill', val: 4,
+        desc: 'TCP/IP, firewalls, VLANs, routing protocols, and secure network design.' },
+      { id: 'pentesting',  name: 'Pen Testing',   group: 'skill', val: 4,
+        desc: 'Ethical hacking — reconnaissance, exploitation, reporting. Hands-on labs and coursework.' },
+      { id: 'ids',         name: 'IDS / IPS',     group: 'skill', val: 4,
+        desc: 'Intrusion detection and prevention — both commercial tools and building custom solutions in Python.' },
+      { id: 'firewalls',   name: 'Firewalls',     group: 'skill', val: 4,
+        desc: 'Rule design, stateful inspection, and managing perimeter defenses.' },
+      // Projects
+      { id: 'proj-ids',       name: 'Python IDS/IPS',        group: 'project', val: 5,
+        desc: 'An intrusion detection/prevention system built entirely in Python. Analyzes network traffic and triggers alerts on suspicious patterns.',
+        badge: 'coming soon' },
+      { id: 'proj-portfolio', name: 'Terminal Portfolio',     group: 'project', val: 5,
+        desc: 'The code behind this site — a terminal-styled portfolio built with xterm.js, now wrapped in an Astro dual-mode site.',
+        url: 'https://github.com/c1d3r24/Site' },
+      // Contact
+      { id: 'github',   name: 'GitHub',   group: 'contact', val: 5,
+        desc: 'My open-source work and side projects.',
+        url: 'https://github.com/c1d3r24' },
+      { id: 'linkedin', name: 'LinkedIn', group: 'contact', val: 5,
+        desc: 'Professional profile and background.',
+        url: 'https://www.linkedin.com/in/nik-carlberg-148945355' },
+    ];
+
+    const links = [
+      { source: 'nik',      target: 'about'         },
+      { source: 'nik',      target: 'projects'       },
+      { source: 'nik',      target: 'skills'         },
+      { source: 'nik',      target: 'contact'        },
+      { source: 'skills',   target: 'cybersec'       },
+      { source: 'skills',   target: 'networking'     },
+      { source: 'skills',   target: 'pentesting'     },
+      { source: 'skills',   target: 'ids'            },
+      { source: 'skills',   target: 'firewalls'      },
+      { source: 'projects', target: 'proj-ids'       },
+      { source: 'projects', target: 'proj-portfolio' },
+      { source: 'contact',  target: 'github'         },
+      { source: 'contact',  target: 'linkedin'       },
+      // Cross-links make the graph feel more connected
+      { source: 'ids',      target: 'proj-ids'       },
+    ];
+
+    // ── Panel ───────────────────────────────────────────────────
+    const panel      = document.getElementById('panel');
+    const panelBadge = document.getElementById('panel-badge');
+    const panelName  = document.getElementById('panel-name');
+    const panelDesc  = document.getElementById('panel-desc');
+    const panelAction = document.getElementById('panel-action');
+
+    document.getElementById('panel-close').addEventListener('click', closePanel);
+
+    function openPanel(node) {
+      const color = COLORS[node.group];
+      panelBadge.textContent = GROUP_LABEL[node.group] ?? node.group;
+      panelBadge.style.background = color + '22';
+      panelBadge.style.color      = color;
+      panelBadge.style.border     = `1px solid ${color}44`;
+
+      panelName.textContent = node.name;
+      panelName.style.color = color;
+      panelDesc.textContent = node.desc ?? '';
+
+      panelAction.innerHTML = '';
+      if (node.url) {
+        const a = document.createElement('a');
+        a.href        = node.url;
+        a.target      = '_blank';
+        a.rel         = 'noopener noreferrer';
+        a.className   = 'panel-link';
+        a.textContent = '↗ open link';
+        panelAction.appendChild(a);
+      } else if (node.badge) {
+        const b = document.createElement('span');
+        b.className   = 'panel-badge';
+        b.textContent = node.badge;
+        panelAction.appendChild(b);
+      }
+
+      panel.classList.add('open');
+    }
+
+    function closePanel() {
+      panel.classList.remove('open');
+    }
+
+    // ── Graph ───────────────────────────────────────────────────
+    const Graph = ForceGraph3D({
+      antialias: true,
+      alpha:     true,
+    })(document.getElementById('graph'))
+      .graphData({ nodes, links })
+      .backgroundColor('#0A0B12')
+      .nodeColor(node => COLORS[node.group] ?? '#ffffff')
+      .nodeVal(node => node.val ?? 4)
+      .nodeOpacity(0.92)
+      .nodeThreeObjectExtend(true)
+      .nodeThreeObject(node => {
+        const sprite = new SpriteText(node.name);
+        sprite.color         = node.group === 'center' ? '#FFC75F' : '#C7D0D9';
+        sprite.textHeight    = node.group === 'center' ? 5 : 3.5;
+        sprite.backgroundColor = 'rgba(10,11,18,0.55)';
+        sprite.padding       = 1.5;
+        sprite.borderRadius  = 2;
+        // Position label just above the sphere
+        const offset = Math.cbrt(node.val ?? 4) * 6 + 4;
+        sprite.position.y = offset;
+        return sprite;
+      })
+      .linkColor(() => '#4DA6FF')
+      .linkOpacity(0.18)
+      .linkWidth(0.4)
+      .linkDirectionalParticles(2)
+      .linkDirectionalParticleWidth(1.2)
+      .linkDirectionalParticleColor(() => '#4DA6FF')
+      .linkDirectionalParticleSpeed(0.004)
+      .onNodeClick(node => {
+        openPanel(node);
+        // Fly camera toward node
+        const dist = 80;
+        const distRatio = 1 + dist / Math.hypot(node.x, node.y, node.z);
+        Graph.cameraPosition(
+          { x: node.x * distRatio, y: node.y * distRatio, z: node.z * distRatio },
+          node,
+          800
+        );
+      })
+      .onBackgroundClick(closePanel);
+
+    // Slow auto-rotate until user interacts
+    let autoRotate = true;
+    Graph.controls().autoRotate      = true;
+    Graph.controls().autoRotateSpeed = 0.4;
+
+    ['mousedown', 'touchstart'].forEach(evt =>
+      document.getElementById('graph').addEventListener(evt, () => {
+        if (autoRotate) {
+          autoRotate = false;
+          Graph.controls().autoRotate = false;
+        }
+      }, { once: false, passive: true })
+    );
+
+    // Fade out hint after first interaction
+    const hint = document.getElementById('hint');
+    document.getElementById('graph').addEventListener('mousedown', () => {
+      hint.style.opacity = '0';
+    }, { once: true });
+
+    // Resize
+    window.addEventListener('resize', () => {
+      Graph.width(window.innerWidth).height(window.innerHeight);
+    });
+  </script>
+
+</body>
+</html>

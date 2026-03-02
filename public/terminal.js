@@ -263,9 +263,9 @@ Combining a strong security foundation with business insight, I aim to protect o
 
 const PROJECTS = [
   {
-    name: "Python IDS/IPS",
-    desc: "An IDS/IPS build entirely in python",
-    //url: "https://github.com/c1d3r24/python-ids"
+    name: "clearnet",
+    desc: "Terminal packet analyzer — live network traffic viewer with protocol breakdown and connection stats",
+    url: "https://github.com/c1d3r24/clearnet"
   },
 
   {

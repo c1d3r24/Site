@@ -1,5 +1,6 @@
 .claude/
 CLAUDE.md
+PLAN.md
 node_modules/
 dist/
 .astro/
